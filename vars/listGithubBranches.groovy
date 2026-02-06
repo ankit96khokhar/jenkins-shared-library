@@ -1,17 +1,18 @@
-def call(String owner, String repo) {
+def call(String username, String repo) {
+  withCredentials([string(credentialsId: 'github-api-token', variable: 'TOKEN')]) {
 
-  def apiUrl = "https://api.github.com/repos/${owner}/${repo}/branches?per_page=100"
+    def apiUrl = "https://api.github.com/repos/${username}/${repo}/branches?per_page=100"
 
-  def output = sh(
-    script: """
-      curl -i -s -H "Authorization: token \$GITHUB_API_TOKEN" \
-        ${apiUrl}
-    """,
-    returnStdout: true
-  ).trim()
+    def output = sh(
+      script: """
+        curl -s -H "Authorization: token \$TOKEN" \
+          ${apiUrl} \
+        | grep '"name"' \
+        | cut -d '"' -f4
+      """,
+      returnStdout: true
+    ).trim()
 
-  echo "RAW GITHUB RESPONSE:"
-  echo output
-
-  return ["DEBUG_MODE"]
+    return output ? output.split("\\n") : []
+  }
 }
